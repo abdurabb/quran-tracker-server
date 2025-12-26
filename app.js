@@ -22,6 +22,11 @@ app.use(express.urlencoded({ extended: true, limit: '1000mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+
+// crone
+const cron = require("node-cron");
+const axios = require("axios");
 connectDB()
 
 
@@ -34,6 +39,16 @@ const server = http.createServer(app);
 app.use('/user', require('./routes/userRoute'))
 app.use('/admin', require('./routes/adminRoute'))
 app.use('/teacher', require('./routes/teacherRoute'))
+
+cron.schedule('*/3 * * * *', async () => {
+    try {
+        const res = await axios.get('https://quran-tracker-server-1.onrender.com/admin/get-classes');
+        console.log('Cron ping success:', res.status);
+    } catch (err) {
+        console.error('Cron ping failed');
+    }
+});
+
 
 server.listen(port, () => {
     console.log(`Server running at ${hostName}:${port}`.magenta);
