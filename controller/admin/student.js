@@ -95,7 +95,7 @@ const getStudents = async (req, res) => {
         if (classId) {
             query.classId = classId
         }
-        const students = await Student.find(query).skip(skip).select('name  dialCode phone image classId').sort({createdAt:-1}).limit(limit).lean();
+        const students = await Student.find(query).skip(skip).select('name email  dialCode phone image classId').sort({ createdAt: -1 }).limit(limit).lean();
         const total = await Student.countDocuments(query)
 
         const studentWithClasses = await Promise.all(students.map(async (std) => {
@@ -111,6 +111,32 @@ const getStudents = async (req, res) => {
         }))
 
         return res.status(200).json({ message: 'Students fetched successfully', students: studentWithClasses, total, totalPages: Math.ceil(total / limit) });
+    } catch (error) {
+        handleError(error, res);
+    }
+}
+
+const getStudentsFilteredByClass = async (req, res) => {
+    try {
+        let { search, classId, isClass = false } = req.query;
+        if (!classId) { return res.status(400).json({ message: 'Class Id is required' }) }
+        const page = Number(req.query.page) || 1
+        const limit = Number(req.query.limit) || 10
+        const skip = (page - 1) * limit
+        let query = {}
+        if (search?.trim()) {
+            query.name = { $regex: new RegExp(search.trim(), 'i') };
+        }
+        isClass = isClass === 'true' ? true : false;
+        if (isClass) {
+            query.classId = classId
+        } else {
+            query.classId = { $ne: classId }
+        }
+        const students = await Student.find(query).select('name email  dialCode phone image classId').sort({ createdAt: -1 }).lean()
+            .skip(skip).limit(limit);
+        const total = await Student.countDocuments(query)
+        return res.status(200).json({ message: 'Students fetched successfully', students, total, totalPages: Math.ceil(total / limit) });
     } catch (error) {
         handleError(error, res);
     }
@@ -161,13 +187,22 @@ const deleteStudent = async (req, res) => {
 const assignClassFotStudent = async (req, res) => {
     try {
         const { studentId, classId } = req?.body;
-        if (!studentId || classId) { return res.status(400).json({ message: 'Missing Class Id or Student Id' }) }
+        if (!studentId || !classId) { return res.status(400).json({ message: 'Missing Class Id or Student Id' }) }
         const classFind = await Class.findById(classId)
         if (!classFind) return res.status(400).json({ message: 'Invalid Class Id' })
-        const student = await Student.findById(studentId)
-        if (!student) { return res.status(400).json({ message: 'Invalid Student Id' }) }
-        student.classId = classId
-        await student.save()
+
+        //  students as array   // 
+        if (Array.isArray(studentId)) {
+            for (const std of studentId) {
+                const student = await Student.findById(std)
+                if (student) student.classId = classId
+                await student.save()
+            }
+        } else {
+            const student = await Student.findById(studentId)
+            if (student) student.classId = classId
+            await student.save()
+        }
         return res.status(200).json({ message: 'Class Assigned Successfully' })
     } catch (error) {
         handleError(error, res);
@@ -177,5 +212,5 @@ const assignClassFotStudent = async (req, res) => {
 
 
 module.exports = {
-    addStudent, updateStudent, getStudents, getStudentDetails, deleteStudent, assignClassFotStudent
+    addStudent, updateStudent, getStudents, getStudentDetails, deleteStudent, assignClassFotStudent, getStudentsFilteredByClass
 }

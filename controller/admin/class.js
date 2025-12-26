@@ -78,13 +78,12 @@ const deleteClass = async (req, res) => {
         const classDoc = await Class.findById(_id);
         if (!classDoc) return res.status(404).json({ message: 'Class not found' });
 
-        // if (classDoc?.teacher !== null) return res.status(400).json({ message: 'Cannot delete: teacher is assigned to this class' });
+        if (classDoc?.teacher !== null) return res.status(400).json({ message: 'Cannot delete: teacher is assigned to this class' });
         // Check if any students or teachers are associated with this class
-        // const [studentExists] = await Promise.all([
-        //     Student.exists({ classId: _id }),
-        //     
-        // ]);
-        // if (studentExists) return res.status(400).json({ message: 'Cannot delete: students are assigned to this class' });
+        const [studentExists] = await Promise.all([
+            Student.exists({ classId: _id }),
+        ]);
+        if (studentExists) return res.status(400).json({ message: 'Cannot delete: students are assigned to this class' });
 
         await Class.findByIdAndDelete(_id);
         return res.status(200).json({ message: 'Class deleted successfully' });
@@ -146,8 +145,22 @@ const addStudents = async (req, res) => {
     }
 }
 
+const removeTeacher = async (req, res) => {
+    try {
+        const { classId } = req?.body;
+        if (!classId) { return res.status(400).json({ message: 'Class Id is required' }) }
+        const classDoc = await Class.findById(classId);
+        if (!classDoc) { return res.status(400).json({ message: 'Class not found' }) }
+        classDoc.teacher = null;
+        await classDoc.save();
+        return res.status(200).json({ message: 'Teacher Removed Successfully' })
+    } catch (error) {
+        handleError(error, res);
+    }
+}
+
 
 
 module.exports = {
-    addClass, updateClass, getClasses, deleteClass, getAllClasses, assignATeacher, addStudents
+    addClass, updateClass, getClasses, deleteClass, getAllClasses, assignATeacher, addStudents, removeTeacher
 }

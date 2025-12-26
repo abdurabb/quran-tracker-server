@@ -2,11 +2,14 @@ const express = require('express')
 const router = express.Router()
 
 const { adminLogin } = require('../controller/admin/auth')
-const { addClass, updateClass, getClasses, deleteClass, getAllClasses, assignATeacher, addStudents } = require('../controller/admin/class')
+const { addClass, updateClass, getClasses, deleteClass, getAllClasses, assignATeacher, addStudents,removeTeacher } = require('../controller/admin/class')
 const { addTeacher, updateTeacher, getTeachers, getTeacherDetails, deleteTeachers, getAllTeachers, assignAClass } = require('../controller/admin/teacher')
-const { addStudent, updateStudent, getStudents, getStudentDetails, deleteStudent, assignClassFotStudent } = require('../controller/admin/student')
+const { addStudent, updateStudent, getStudents,getStudentsFilteredByClass, getStudentDetails, deleteStudent, assignClassFotStudent } = require('../controller/admin/student')
 const { protectAdmin } = require('../middleware/auth')
-
+const { addLesson, updateLesson, getLessons, deleteLessons, getLessonTypes, addLessonType, updateLessonType, deleteLessonType } = require('../controller/admin/lessonsAndMarks')
+const { getTopStudents, getReports, getStudentReports } = require('../controller/admin/report')
+const { getAttendance } = require('../controller/admin/attendance')
+const { getDashboardData } = require('../controller/admin/dashboard')
 
 
 
@@ -21,6 +24,7 @@ router.post('/delete-class', protectAdmin, deleteClass)
 router.get('/get-all-classes', protectAdmin, getAllClasses)
 router.post('/assign-a-teacher', protectAdmin, assignATeacher)
 router.post('/add-students', protectAdmin, addStudents)
+router.post('/remove-teacher',protectAdmin, removeTeacher)
 
 // teachers
 router.post('/add-teacher', protectAdmin, addTeacher)
@@ -35,19 +39,36 @@ router.post('/assign-a-class', protectAdmin, assignAClass)
 router.post('/add-student', protectAdmin, addStudent)
 router.post('/update-student', protectAdmin, updateStudent)
 router.get('/get-students', protectAdmin, getStudents)
+router.get('/get-students-filtered-by-class', protectAdmin, getStudentsFilteredByClass)
 router.get('/get-student-details', protectAdmin, getStudentDetails)
 router.post('/delete-students', protectAdmin, deleteStudent)
 router.post('/assign-a-class-for-student', protectAdmin, assignClassFotStudent)
 
 
 // lessons and marks
+router.post('/add-lesson', protectAdmin, addLesson)
+router.post('/update-lesson', protectAdmin, updateLesson)
+router.get('/get-lessons', protectAdmin, getLessons)
+router.post('/delete-lesson', protectAdmin, deleteLessons)
+router.get('/get-lesson-types', protectAdmin, getLessonTypes)
+router.post('/add-lesson-type', protectAdmin, addLessonType)
+router.post('/update-lesson-type', protectAdmin, updateLessonType)
+router.post('/delete-lesson-type', protectAdmin, deleteLessonType)
+
+
 
 
 // daily reports
+router.get('/get-top-students', protectAdmin, getTopStudents)
+router.get('/get-daily-reports', protectAdmin, getReports)
+router.get('/get-student-report-details', protectAdmin, getStudentReports)
+
+// attendance
+router.get('/get-attendance',protectAdmin, getAttendance)
 
 
-// monthly toper
-
+// dashboard
+router.get('/get-dashboard-data',protectAdmin, getDashboardData)
 
 
 
