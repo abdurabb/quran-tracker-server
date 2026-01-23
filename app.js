@@ -24,9 +24,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 
-// crone
-const cron = require("node-cron");
-const axios = require("axios");
 connectDB()
 
 
@@ -40,14 +37,7 @@ app.use('/user', require('./routes/userRoute'))
 app.use('/admin', require('./routes/adminRoute'))
 app.use('/teacher', require('./routes/teacherRoute'))
 
-cron.schedule('*/1 * * * *', async () => {
-    try {
-        const res = await axios.get('https://quran-tracker-server-1.onrender.com/admin/crone');
-        console.log('Cron ping success:', res.status);
-    } catch (err) {
-        console.error('Cron ping failed');
-    }
-});
+
 
 
 server.listen(port, () => {

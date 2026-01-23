@@ -60,6 +60,8 @@ const getReports = async (req, res) => {
 const getToppers = async (req, res) => {
     try {
         const { startDate, endDate, count = 3 } = req.query;
+        const userData = req.user;
+        const classId = userData?.classId || null;
         const matchStage = {};
         if (!startDate && !endDate) {
             // Default case: last 30 days
@@ -119,7 +121,8 @@ const getToppers = async (req, res) => {
                     studentId: { $first: '$studentId' },
                     name: { $first: '$student.name' },
                     class: { $first: '$class.name' },
-                    totalMark: { $sum: '$obtainedMark' }
+                    totalMark: { $sum: '$obtainedMark' },
+                    image: { $first: '$student.image' }
                 }
             },
 
@@ -136,7 +139,6 @@ const getToppers = async (req, res) => {
 
         // class toppers
         const pipelineClassToppers = [
-            // Optional date filter (same logic as above if needed)
             { $match: matchStage },
 
             // Join student
@@ -150,6 +152,13 @@ const getToppers = async (req, res) => {
             },
             { $unwind: '$student' },
 
+            // 🔑 MATCH CLASS AFTER STUDENT LOOKUP
+            {
+                $match: {
+                    'student.classId': new mongoose.Types.ObjectId(classId)
+                }
+            },
+
             // Join class
             {
                 $lookup: {
@@ -161,55 +170,58 @@ const getToppers = async (req, res) => {
             },
             { $unwind: '$class' },
 
-            // 1️⃣ Total marks per student per class
+            // 1️⃣ Total marks per student
             {
                 $group: {
-                    _id: {
-                        classId: '$class._id',
-                        studentId: '$student._id'
-                    },
+                    _id: '$student._id',
                     studentName: { $first: '$student.name' },
+                    image: { $first: '$student.image' },
+                    classId: { $first: '$class._id' },
                     className: { $first: '$class.name' },
                     totalMark: { $sum: '$obtainedMark' }
                 }
             },
 
-            // 2️⃣ Sort students by marks within class
+            // 2️⃣ Sort by marks
+            { $sort: { totalMark: -1 } },
+
+            // 3️⃣ Take only top 3
+            { $limit: 3 },
+
+            // 4️⃣ Add rank
             {
-                $sort: {
-                    '_id.classId': 1,
-                    totalMark: -1
+                $addFields: {
+                    rank: { $add: [{ $indexOfArray: [[1, 2, 3], 1] }, 1] }
                 }
             },
 
-            // 3️⃣ Pick topper per class
-            {
-                $group: {
-                    _id: '$_id.classId',
-                    className: { $first: '$className' },
-                    topper: {
-                        $first: {
-                            studentId: '$_id.studentId',
-                            studentName: '$studentName',
-                            totalMark: '$totalMark'
-                        }
-                    }
-                }
-            },
-
-            // Optional: clean output
+            // 5️⃣ Final shape
             {
                 $project: {
                     _id: 0,
-                    classId: '$_id',
-                    className: 1,
-                    topper: 1
+                    studentId: '$_id',
+                    studentName: 1,
+                    image: 1,
+                    totalMark: 1,
+                    rank: { $literal: null }, // fixed below
+                    classId: 1,
+                    className: 1
                 }
             }
         ];
 
-        const classToppers = await Mark.aggregate(pipelineClassToppers);
-        return res.status(200).json({ message: 'Top students fetched successfully', topStudents,classToppers });
+
+
+        const classToppersRaw = classId
+            ? await Mark.aggregate(pipelineClassToppers)
+            : [];
+
+        const classToppers = classToppersRaw.map((item, idx) => ({
+            ...item,
+            rank: idx + 1
+        }));
+
+        return res.status(200).json({ message: 'Top students fetched successfully', topStudents, classToppers:classToppersRaw });
     } catch (error) {
         handleError(error, res);
     }
