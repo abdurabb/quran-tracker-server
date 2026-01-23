@@ -38,8 +38,6 @@ app.use('/admin', require('./routes/adminRoute'))
 app.use('/teacher', require('./routes/teacherRoute'))
 
 
-
-
 server.listen(port, () => {
     console.log(`Server running at ${hostName}:${port}`.magenta);
     console.log(`API Documentation available at ${hostName}:${port}/api-docs`.green);
