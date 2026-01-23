@@ -26,6 +26,15 @@ const adminLogin = async (req, res) => {
     }
 }
 
+const crone = async (req, res) => {
+    try {
+        console.log('Cron ping success');
+        return res.status(200).json({ success: true, message: 'Cron ping success' });
+    } catch (error) {
+        handleError(error, res);
+    }
+}
+
 module.exports = {
-    adminLogin
+    adminLogin,crone
 }

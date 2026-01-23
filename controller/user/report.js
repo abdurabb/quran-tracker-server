@@ -1,7 +1,7 @@
 const { handleError } = require('../../handler/handleError')
 const Report = require('../../models/teacher/Mark')
 const Mark = require('../../models/teacher/Mark')
-
+const Class = require('../../models/admin/class')
 const mongoose = require('mongoose')
 
 
@@ -133,7 +133,83 @@ const getToppers = async (req, res) => {
             { $limit: Number(count) }
         ];
         const topStudents = await Mark.aggregate(pipeline);
-        return res.status(200).json({ message: 'Top students fetched successfully', topStudents });
+
+        // class toppers
+        const pipelineClassToppers = [
+            // Optional date filter (same logic as above if needed)
+            { $match: matchStage },
+
+            // Join student
+            {
+                $lookup: {
+                    from: 'students',
+                    localField: 'studentId',
+                    foreignField: '_id',
+                    as: 'student'
+                }
+            },
+            { $unwind: '$student' },
+
+            // Join class
+            {
+                $lookup: {
+                    from: 'classes',
+                    localField: 'student.classId',
+                    foreignField: '_id',
+                    as: 'class'
+                }
+            },
+            { $unwind: '$class' },
+
+            // 1️⃣ Total marks per student per class
+            {
+                $group: {
+                    _id: {
+                        classId: '$class._id',
+                        studentId: '$student._id'
+                    },
+                    studentName: { $first: '$student.name' },
+                    className: { $first: '$class.name' },
+                    totalMark: { $sum: '$obtainedMark' }
+                }
+            },
+
+            // 2️⃣ Sort students by marks within class
+            {
+                $sort: {
+                    '_id.classId': 1,
+                    totalMark: -1
+                }
+            },
+
+            // 3️⃣ Pick topper per class
+            {
+                $group: {
+                    _id: '$_id.classId',
+                    className: { $first: '$className' },
+                    topper: {
+                        $first: {
+                            studentId: '$_id.studentId',
+                            studentName: '$studentName',
+                            totalMark: '$totalMark'
+                        }
+                    }
+                }
+            },
+
+            // Optional: clean output
+            {
+                $project: {
+                    _id: 0,
+                    classId: '$_id',
+                    className: 1,
+                    topper: 1
+                }
+            }
+        ];
+
+        const classToppers = await Mark.aggregate(pipelineClassToppers);
+        return res.status(200).json({ message: 'Top students fetched successfully', topStudents,classToppers });
     } catch (error) {
         handleError(error, res);
     }

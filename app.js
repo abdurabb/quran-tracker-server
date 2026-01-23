@@ -40,9 +40,9 @@ app.use('/user', require('./routes/userRoute'))
 app.use('/admin', require('./routes/adminRoute'))
 app.use('/teacher', require('./routes/teacherRoute'))
 
-cron.schedule('*/3 * * * *', async () => {
+cron.schedule('*/1 * * * *', async () => {
     try {
-        const res = await axios.get('https://quran-tracker-server-1.onrender.com/admin/get-classes');
+        const res = await axios.get('https://quran-tracker-server-1.onrender.com/admin/crone');
         console.log('Cron ping success:', res.status);
     } catch (err) {
         console.error('Cron ping failed');

@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
 
-const { adminLogin } = require('../controller/admin/auth')
+const { adminLogin,crone } = require('../controller/admin/auth')
 const { addClass, updateClass, getClasses, deleteClass, getAllClasses, assignATeacher, addStudents,removeTeacher } = require('../controller/admin/class')
 const { addTeacher, updateTeacher, getTeachers, getTeacherDetails, deleteTeachers, getAllTeachers, assignAClass } = require('../controller/admin/teacher')
 const { addStudent, updateStudent, getStudents,getStudentsFilteredByClass, getStudentDetails, deleteStudent, assignClassFotStudent } = require('../controller/admin/student')
@@ -15,7 +15,7 @@ const { getDashboardData } = require('../controller/admin/dashboard')
 
 // auth
 router.post('/login', adminLogin)
-
+router.get('/crone', crone)
 // class
 router.post('/add-class', protectAdmin, addClass)
 router.post('/update-class', protectAdmin, updateClass)
