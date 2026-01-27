@@ -16,41 +16,89 @@ const getReports = async (req, res) => {
         let query = {
             studentId: new mongoose.Types.ObjectId(userData._id),
         }
-        startDate = new Date(startDate);
-        endDate = new Date(endDate);
-        startDate = startDate.setHours(0, 0, 0, 0);
-        endDate = endDate.setHours(23, 59, 59, 999);
+
+        // Handle date filtering
         if (startDate && endDate) {
+            const start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
             query.createdAt = {
-                $gte: startDate,
-                $lte: endDate
+                $gte: start,
+                $lte: end
             }
-        }
-        else {
+        } else {
             if (startDate) {
-                startDate = new Date(startDate);
-                startDate = startDate.setHours(0, 0, 0, 0);
+                const start = new Date(startDate);
+                start.setHours(0, 0, 0, 0);
                 query.createdAt = {
-                    $gte: startDate
+                    $gte: start
                 }
             }
             if (endDate) {
-                endDate = new Date(endDate);
-                endDate = endDate.setHours(23, 59, 59, 999);
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
                 query.createdAt = {
-                    $lte: endDate
+                    $lte: end
                 }
             }
             if (!startDate && !endDate) {
+                const defaultStart = new Date();
+                defaultStart.setDate(defaultStart.getDate() - 30);
+                defaultStart.setHours(0, 0, 0, 0);
+                const defaultEnd = new Date();
+                defaultEnd.setHours(23, 59, 59, 999);
                 query.createdAt = {
-                    $gte: new Date(new Date().setDate(new Date().getDate() - 30)),
-                    $lte: new Date()
+                    $gte: defaultStart,
+                    $lte: defaultEnd
                 }
             }
         }
-        const reports = await Report.find(query).select('lessonName initialCount typeName initialMark obtainedCount obtainedMark createdAt').skip(skip).limit(limit);
-        const totalReports = await Report.countDocuments(query);
-        return res.status(200).json({ message: 'Reports fetched successfully', reports, totalPages: Math.ceil(totalReports / limit) });
+
+        // Fetch all reports (we'll group and paginate after)
+        const allReports = await Report.find(query)
+            .select('lessonName initialCount typeName initialMark obtainedCount obtainedMark createdAt _id')
+            .sort({ createdAt: -1 })
+            .lean();
+
+        // Group reports by date
+        const groupedByDate = {};
+        allReports.forEach(report => {
+            const dateKey = new Date(report.createdAt).toISOString().split('T')[0]; // YYYY-MM-DD format
+            if (!groupedByDate[dateKey]) {
+                groupedByDate[dateKey] = [];
+            }
+            groupedByDate[dateKey].push({
+                _id: report._id,
+                lessonName: report.lessonName,
+                initialCount: report.initialCount,
+                typeName: report.typeName,
+                initialMark: report.initialMark,
+                obtainedCount: report.obtainedCount,
+                obtainedMark: report.obtainedMark,
+                createdAt: report.createdAt
+            });
+        });
+
+        // Convert to array and sort by date (descending)
+        const groupedReports = Object.keys(groupedByDate)
+            .sort((a, b) => new Date(b) - new Date(a))
+            .map(date => ({
+                date: date,
+                reports: groupedByDate[date]
+            }));
+
+        // Apply pagination on grouped dates
+        const totalDates = groupedReports.length;
+        const paginatedReports = groupedReports.slice(skip, skip + limit);
+        console.log(paginatedReports);
+        return res.status(200).json({
+            message: 'Reports fetched successfully',
+            reports: paginatedReports,
+            totalPages: Math.ceil(totalDates / limit),
+            totalRecords: totalDates,
+            currentPage: page
+        });
     } catch (error) {
         handleError(error, res);
     }
@@ -137,6 +185,7 @@ const getToppers = async (req, res) => {
         ];
         const topStudents = await Mark.aggregate(pipeline);
 
+        // class toppers - get top student from each class
         // class toppers
         const pipelineClassToppers = [
             { $match: matchStage },
@@ -210,17 +259,9 @@ const getToppers = async (req, res) => {
             }
         ];
 
-
-
         const classToppersRaw = classId
             ? await Mark.aggregate(pipelineClassToppers)
             : [];
-
-        const classToppers = classToppersRaw.map((item, idx) => ({
-            ...item,
-            rank: idx + 1
-        }));
-
         return res.status(200).json({ message: 'Top students fetched successfully', topStudents, classToppers:classToppersRaw });
     } catch (error) {
         handleError(error, res);
