@@ -5,6 +5,7 @@ const { getReports,getStudentReports,getTopStudents,updateReport,deleteReport, }
 const { addAttendance, getAttendance, updateAttendance, deleteAttendance } = require('../controller/teacher/attendance')
 const { getDashboardData } = require('../controller/teacher/Dashboard')
 const { protectTeacher } = require('../middleware/auth')
+const { addEducationLevel,getEducationLevelHistory,updateEducationLevelHistory,deleteEducationLevelHistory } = require('../controller/teacher/educationLevel')
 
 router.get('/get-classes', protectTeacher, getClasses)
 router.get('/get-students', protectTeacher, getStudents)
@@ -24,8 +25,10 @@ router.get('/get-attendance',protectTeacher, getAttendance)
 router.put('/update-attendance',protectTeacher, updateAttendance)
 router.delete('/delete-attendance',protectTeacher, deleteAttendance)
 
-// router.get('/get-settings', protectTeacher, getSettings)
-// router.get('/get-notifications', protectTeacher, getNotifications)
-// router.get('/get-profile', protectTeacher, getProfile),
+router.post('/add-education-level',protectTeacher, addEducationLevel)
+router.get('/get-education-level-history',protectTeacher, getEducationLevelHistory)
+router.put('/update-education-level-history/:id',protectTeacher, updateEducationLevelHistory)
+router.delete('/delete-education-level-history/:id',protectTeacher, deleteEducationLevelHistory)
+
 
 module.exports = router
