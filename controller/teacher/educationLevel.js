@@ -18,13 +18,19 @@ const addEducationLevel = async (req, res) => {
         if (!pageCount) return res.status(400).json({ message: 'Page Count is required' });
         if (juzuCompleted == undefined || juzuCompleted == null) return res.status(400).json({ message: 'Juzu Completed is required' });
         if (juzuCompleted == true && !juzuCount) return res.status(400).json({ message: 'Juzu Count is required' });
-        if (juzuCompleted == false && juzuCount != 0) return res.status(400).json({ message: 'Juzu Count should be 0' });
-        if(juzuCount > 0 && (!juzuDetails || juzuDetails.length == 0)) return res.status(400).json({ message: 'Juzu Details are required' });
-        if(juzuCount > 0 && juzuDetails.length > 0){
-            for(const detail of juzuDetails){
-                if(!detail.juzNumber) return res.status(400).json({ message: 'Juzu Number is required' });
-                if(!detail.juzName) return res.status(400).json({ message: 'Juzu Name is required' });
-                if(!detail.howManyDays) return res.status(400).json({ message: 'How Many Days is required' });
+        const isExist = await Education.findOne({studentId,month,year})
+        if(isExist){
+            return res.status(400).json({message:'Educatioin Level Already Added for this student'})
+        }
+        if (juzuCompleted === false && juzuCount !== 0 && juzuCount !== null) {
+            return res.status(400).json({ message: 'Juzu Count should be 0' });
+        }
+        if (juzuCount > 0 && (!juzuDetails || juzuDetails.length == 0)) return res.status(400).json({ message: 'Juzu Details are required' });
+        if (juzuCount > 0 && juzuDetails.length > 0) {
+            for (const detail of juzuDetails) {
+                if (!detail.juzNumber) return res.status(400).json({ message: 'Juzu Number is required' });
+                if (!detail.juzName) return res.status(400).json({ message: 'Juzu Name is required' });
+                if (!detail.howManyDays) return res.status(400).json({ message: 'How Many Days is required' });
             }
         }
         await Education.create({
@@ -71,17 +77,17 @@ const getEducationLevelHistory = async (req, res) => {
 const updateEducationLevelHistory = async (req, res) => {
     try {
         const { id } = req.params;
-        if(!id) return res.status(400).json({ message: 'ID is required' });
+        if (!id) return res.status(400).json({ message: 'ID is required' });
         const educationLevelHistory = await Education.findById(id);
-        if(!educationLevelHistory) return res.status(400).json({ message: 'Education Level History not found' });
+        if (!educationLevelHistory) return res.status(400).json({ message: 'Education Level History not found' });
         const { juzuCompleted, juzuCount, lineCount, month, pageCount, juzuDetails, year } = req.body;
-        if(juzuCompleted) educationLevelHistory.juzuCompleted = juzuCompleted;
-        if(juzuCount) educationLevelHistory.juzuCount = juzuCount;
-        if(lineCount) educationLevelHistory.lineCount = lineCount;
-        if(month) educationLevelHistory.month = month;
-        if(pageCount) educationLevelHistory.pageCount = pageCount;
-        if(juzuDetails) educationLevelHistory.juzuDetails = juzuDetails;
-        if(year) educationLevelHistory.year = year;
+        if (juzuCompleted) educationLevelHistory.juzuCompleted = juzuCompleted;
+        if (juzuCount) educationLevelHistory.juzuCount = juzuCount;
+        if (lineCount) educationLevelHistory.lineCount = lineCount;
+        if (month) educationLevelHistory.month = month;
+        if (pageCount) educationLevelHistory.pageCount = pageCount;
+        if (juzuDetails) educationLevelHistory.juzuDetails = juzuDetails;
+        if (year) educationLevelHistory.year = year;
         await educationLevelHistory.save();
         return res.status(200).json({ message: 'Education Level History updated successfully' });
     } catch (error) {
@@ -97,6 +103,6 @@ const deleteEducationLevelHistory = async (req, res) => {
     } catch (error) {
         handleError(error, res);
     }
-}   
+}
 
-module.exports = { addEducationLevel,getEducationLevelHistory,updateEducationLevelHistory,deleteEducationLevelHistory }
+module.exports = { addEducationLevel, getEducationLevelHistory, updateEducationLevelHistory, deleteEducationLevelHistory }

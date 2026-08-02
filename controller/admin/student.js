@@ -4,17 +4,31 @@ const Class = require('../../models/admin/class');
 const Teacher = require('../../models/admin/teacher');
 const Student = require('../../models/admin/student');
 const mongoose = require('mongoose');
+const Branch = require('../../models/admin/branch');
 
 
 const addStudent = async (req, res) => {
     try {
-        let { email, classId } = req?.body;
+        let { email, classId, branch } = req?.body;
         const existingStudent = await Student.findOne({ email: new RegExp(`^${email}$`, 'i') });
         if (existingStudent) {
             return res.status(400).json({ message: 'Students already exists with this email or phone number' });
         }
+        if (!branch) {
+            return res.status(400).json({ message: 'Branch is Required', error: 'Branch is required' })
+        }
+        const findBranch = await Branch.findById(branch)
+        if (!findBranch) {
+            return res.status(400).json({ message: 'Branch not Found', error: 'Branch not Found' })
+        }
         if (!mongoose.Types.ObjectId.isValid(classId)) {
             classId = null;
+        }
+        if (classId) {
+            const findClass = await Class.findById(classId)
+            if (!findClass) {
+                return res.status(400).json({ message: 'Class Not Found', error: 'Class Not Found' })
+            }
         }
         await Student.create({
             ...req?.body,

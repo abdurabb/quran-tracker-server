@@ -274,7 +274,6 @@ const updateReport = async (req, res) => {
 
         const student = await Student.findById(existingMark?.studentId).populate('classId', 'teacher').select('classId').lean();
         if (!student) return res.status(400).json({ message: 'Student not found' });
-        console.log(student?.classId?.teacher?.toString(), req.teacherId?.toString())
         if (student?.classId?.teacher?.toString() != req.teacherId?.toString()) return res.status(400).json({ message: 'You are not authorized to update marks for this student' });
 
 

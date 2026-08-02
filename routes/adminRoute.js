@@ -2,7 +2,7 @@ const express = require('express')
 const router = express.Router()
 
 const { adminLogin,crone } = require('../controller/admin/auth')
-const { addClass, updateClass, getClasses, deleteClass, getAllClasses, assignATeacher, addStudents,removeTeacher } = require('../controller/admin/class')
+const { addClass, updateClass, getClasses, deleteClass, getAllClasses, assignATeacher, addStudents,removeTeacher,getClassByID } = require('../controller/admin/class')
 const { addTeacher, updateTeacher, getTeachers, getTeacherDetails, deleteTeachers, getAllTeachers, assignAClass } = require('../controller/admin/teacher')
 const { addStudent, updateStudent, getStudents,getStudentsFilteredByClass, getStudentDetails, deleteStudent, assignClassFotStudent } = require('../controller/admin/student')
 const { protectAdmin } = require('../middleware/auth')
@@ -10,6 +10,13 @@ const { addLesson, updateLesson, getLessons, deleteLessons, getLessonTypes, addL
 const { getTopStudents, getReports, getStudentReports } = require('../controller/admin/report')
 const { getAttendance } = require('../controller/admin/attendance')
 const { getDashboardData } = require('../controller/admin/dashboard')
+const {
+    addBranch,
+    getBranches,
+    getAllBranchNames,
+    updateBranch,
+    deleteBranch,
+} = require("../controller/admin/branch");
 
 
 
@@ -25,6 +32,7 @@ router.get('/get-all-classes', protectAdmin, getAllClasses)
 router.post('/assign-a-teacher', protectAdmin, assignATeacher)
 router.post('/add-students', protectAdmin, addStudents)
 router.post('/remove-teacher',protectAdmin, removeTeacher)
+router.get('/get-clss-by-id',protectAdmin, getClassByID)
 
 // teachers
 router.post('/add-teacher', protectAdmin, addTeacher)
@@ -72,7 +80,12 @@ router.get('/get-dashboard-data',protectAdmin, getDashboardData)
 
 
 
-
+// branch management
+router.get("/get-branches", protectAdmin, getBranches);
+router.post("/add-branch", protectAdmin, addBranch);
+router.post("/update-branch", protectAdmin, updateBranch);
+router.post("/delete-branch", protectAdmin, deleteBranch);
+router.get('/get-all-branch-names',protectAdmin, getAllBranchNames)
 
 
 module.exports = router

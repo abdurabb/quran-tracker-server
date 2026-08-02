@@ -19,6 +19,32 @@ const addClass = async (req, res) => {
     }
 };
 
+const getClassByID = async (req, res) => {
+    try {
+        const { _id } = req.query;
+        if (!_id) return res.status(400).json({ message: '_id  is required' });
+        const existingClass = await Class.findById(_id);
+
+        if (!existingClass) {
+            return res.status(400).json({ message: "Class Not Found" });
+        }
+
+        let result = existingClass.toObject();
+
+        if (result.teacher) {
+            const teacherDetails = await Teacher.findById(result.teacher);
+
+            if (teacherDetails) {
+                result.teacherName = teacherDetails.name;
+            }
+        }
+        return res.status(201).json({ message: 'Class Data Feteched successfully', class: result });
+
+    } catch (error) {
+        handleError(error, res);
+    }
+}
+
 
 const updateClass = async (req, res) => {
     try {
@@ -100,11 +126,9 @@ const getAllClasses = async (req, res) => {
         if (typeof search === 'string' && search.trim()) {
             query.name = { $regex: new RegExp(search.trim(), 'i') };
         }
-        console.log(query)
         const classes = await Class.find(query).select('name')
         return res.status(200).json({ message: 'Classes fetched successfully', classes, });
     } catch (error) {
-        console.log(error)
         handleError(error, res);
     }
 }
@@ -162,5 +186,5 @@ const removeTeacher = async (req, res) => {
 
 
 module.exports = {
-    addClass, updateClass, getClasses, deleteClass, getAllClasses, assignATeacher, addStudents, removeTeacher
+    addClass, updateClass, getClasses, deleteClass, getAllClasses, assignATeacher, addStudents, removeTeacher, getClassByID
 }

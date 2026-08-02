@@ -31,10 +31,8 @@ const addAttendance = async (req, res) => {
             });
 
             if (!isExist) {
-                console.log('date', date ? new Date(date) : new Date())
                 const attendance = await Attendance.create({ studentId, date: formattedDate, status, reason });
             } else {
-                console.log('else')
                 if (status == 'leave' && !reason) return res.status(400).json({ message: 'Reason is required' });
                 isExist.status = status;
                 isExist.reason = reason;

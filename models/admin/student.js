@@ -43,6 +43,19 @@ const studentsSchema = new mongoose.Schema({
         ref: 'Class',
         default: null
     },
+    branch: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Branch',
+        required: [true, 'Address is required']
+    },
+    fatherName: {
+        type: String,
+        required: [true, 'father name is required']
+    },
+    motherName: {
+        type: String,
+        required: [true, 'mother name is required']
+    },
     admissionDate: {
         type: Date,
         required: [true, 'Admission Date is required']

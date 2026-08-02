@@ -91,7 +91,6 @@ const getReports = async (req, res) => {
         // Apply pagination on grouped dates
         const totalDates = groupedReports.length;
         const paginatedReports = groupedReports.slice(skip, skip + limit);
-        console.log(paginatedReports);
         return res.status(200).json({
             message: 'Reports fetched successfully',
             reports: paginatedReports,
