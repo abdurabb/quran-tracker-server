@@ -65,6 +65,7 @@ const getTopStudents = async (req, res) => {
                     _id: '$studentId',
                     studentId: { $first: '$studentId' },
                     name: { $first: '$student.name' },
+                    image: { $first: '$student.image' },
                     class: { $first: '$class.name' },
                     totalMark: { $sum: '$obtainedMark' }
                 }
