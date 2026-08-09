@@ -56,6 +56,14 @@ const studentsSchema = new mongoose.Schema({
         type: String,
         required: [true, 'mother name is required']
     },
+    motherDialCode:{
+        type: String,
+        required: [true, 'Dial Code is required']
+    },
+    motherPhone:{
+        type: String,
+        required: [true, 'Phone is required']
+    },
     admissionDate: {
         type: Date,
         required: [true, 'Admission Date is required']

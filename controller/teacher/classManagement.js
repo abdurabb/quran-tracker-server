@@ -46,7 +46,9 @@ const getStudentDetails = async (req, res) => {
         }
         const student = await Student.findById(req.query.studentId)
             .populate('classId', 'name description teacher')
-            .select('name email dialCode phone image classId').lean()
+            .populate('branch','name')
+            .select('-password')
+            // .select('name email dialCode phone image classId,branch, fatherName,motherName,motherDialCode,motherPhone,admissionDate,address,gender,dob').lean()
         if (!student) {
             return res.status(400).json({ message: 'Student not found' })
         }
