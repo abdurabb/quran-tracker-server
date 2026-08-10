@@ -4,6 +4,7 @@ const Teacher = require("../../models/admin/teacher");
 const Student = require("../../models/admin/student");
 const mongoose = require("mongoose");
 const Branch = require("../../models/admin/branch");
+const { hashPassword } = require("../../handler/password");
 
 const addStudent = async (req, res) => {
   try {
@@ -40,6 +41,7 @@ const addStudent = async (req, res) => {
     }
     await Student.create({
       ...req?.body,
+      password: await hashPassword(req?.body?.password),
       dob: new Date(req?.body?.dob),
       admissionDate: new Date(req?.body?.admissionDate),
       classId,
@@ -228,7 +230,7 @@ const getStudentDetails = async (req, res) => {
     if (!_id) {
       return res.status(400).json({ message: "_id is required" });
     }
-    const student = await Student.findById(_id);
+    const student = await Student.findById(_id).select('-password')
     if (!student) {
       return res.status(400).json({ message: "Student not fount" });
     }
