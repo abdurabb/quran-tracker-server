@@ -1,53 +1,57 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const educationLevelSchema = new mongoose.Schema({
+const educationLevelSchema = new mongoose.Schema(
+  {
     studentId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Student',
-        required: [true, 'Student ID is required']
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Student",
+      required: [true, "Student ID is required"],
     },
     juzuCompleted: {
-        type: Boolean,
-        required: [true, 'Juzu Completed is required']
+      type: Boolean,
+      required: [true, "Juzu Completed is required"],
     },
     juzuCount: {
-        type: Number,
-        default: 0
+      type: Number,
+      default: 0,
     },
     lineCount: {
-        type: Number,
-        default: 0
+      type: Number,
+      default: 0,
+      min: [0, "Line count cannot be less than 0"],
+      max: [15, "Line count cannot be more than 15"],
     },
     month: {
-        type: Number,
-        required: [true, 'Month is required']
+      type: Number,
+      required: [true, "Month is required"],
     },
     pageCount: {
-        type: Number,
-        required: [true, 'Page Count is required']
+      type: Number,
+      required: [true, "Page Count is required"],
     },
     year: {
-        type: Number,
-        required: [true, 'Year is required']
+      type: Number,
+      required: [true, "Year is required"],
     },
     juzuDetails: [
-        {
-            juzNumber: {
-                type: Number,
-                default: 0
-            },
-            juzName: {
-                type: String,
-                default: ''
-            },
-            howManyDays: {
-                type: Number,
-                default: 0
-            },
-        }
-    ]
+      {
+        juzNumber: {
+          type: Number,
+          default: 0,
+        },
+        juzName: {
+          type: String,
+          default: "",
+        },
+        howManyDays: {
+          type: Number,
+          default: 0,
+        },
+      },
+    ],
+  },
+  { timestamps: true },
+);
 
-}, { timestamps: true })
-
-const EducationLevel = mongoose.model('EducationLevel', educationLevelSchema);
-module.exports = EducationLevel
+const EducationLevel = mongoose.model("EducationLevel", educationLevelSchema);
+module.exports = EducationLevel;

@@ -96,7 +96,8 @@ const updateStudent = async (req, res) => {
       students.email = email;
     }
     if (password) {
-      students.password = password;
+      // students.password = password;
+      students.password = await hashPassword(password);
     }
     if (dob) students.dob = new Date(dob);
     if (admissionDate) students.admissionDate = new Date(admissionDate);
@@ -230,7 +231,7 @@ const getStudentDetails = async (req, res) => {
     if (!_id) {
       return res.status(400).json({ message: "_id is required" });
     }
-    const student = await Student.findById(_id).select('-password')
+    const student = await Student.findById(_id).select("-password");
     if (!student) {
       return res.status(400).json({ message: "Student not fount" });
     }

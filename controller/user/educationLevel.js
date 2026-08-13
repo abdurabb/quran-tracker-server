@@ -158,7 +158,6 @@ const getEducationLevelGraph = async (req, res) => {
         {
           $project: {
             _id: 1,
-
             value: {
               $add: [
                 "$totalPages",

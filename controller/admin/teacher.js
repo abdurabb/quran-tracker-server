@@ -68,8 +68,8 @@ const updateTeacher = async (req, res) => {
       teacher.email = email;
     }
     if (password) {
-      // const hashedPassword = await bcrypt.hash(password, 10);
-      teacher.password = password;
+      // teacher.password = password;
+      teacher.password = await hashPassword(password);
     }
     if (qualification) teacher.qualification = qualification;
     if (dob) teacher.dob = new Date(dob);
@@ -187,7 +187,7 @@ const getTeacherDetails = async (req, res) => {
     if (!_id) {
       return res.status(400).json({ message: "_id is required" });
     }
-    const teacher = await Teacher.findById(_id).select('-password')
+    const teacher = await Teacher.findById(_id).select("-password");
     if (!teacher) {
       return res.status(400).json({ message: "Teacher not fount" });
     }
