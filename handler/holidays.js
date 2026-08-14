@@ -1,6 +1,6 @@
 const WEEKLY_HOLIDAYS = [0];
 //                       ↑  ↑
-//                     Friday Sunday
+//                      Sunday
 
 module.exports = WEEKLY_HOLIDAYS;
 
