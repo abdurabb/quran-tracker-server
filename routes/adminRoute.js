@@ -60,6 +60,7 @@ const {
 const {
   getHoliday,
   createHoliday,
+  createMultipleHoliday,
   deleteHoliday,
 } = require("../controller/admin/holidayController");
 
@@ -130,6 +131,7 @@ router.get("/get-all-branch-names", protectAdmin, getAllBranchNames);
 // holidays
 router.get("/get-holiday", protectAdmin, getHoliday);
 router.post("/add-holiday", protectAdmin, createHoliday);
+router.post("/create-multiple-holiday", protectAdmin, createMultipleHoliday);
 router.post("/delete-holiday", protectAdmin, deleteHoliday);
 
 module.exports = router;

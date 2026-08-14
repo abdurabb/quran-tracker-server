@@ -51,6 +51,118 @@ const createHoliday = async (req, res) => {
   }
 };
 
+const createMultipleHoliday = async (req, res) => {
+  try {
+    const { dates, name, description } = req.body;
+
+    // --------------------------------
+    // Basic validation
+    // --------------------------------
+
+    if (!Array.isArray(dates) || dates.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one holiday date is required",
+      });
+    }
+
+    if (!name || !name.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Holiday name is required",
+      });
+    }
+
+    // --------------------------------
+    // Remove duplicate dates
+    // --------------------------------
+
+    const uniqueDates = [...new Set(dates)];
+
+    // --------------------------------
+    // Validate all dates
+    // --------------------------------
+
+    const invalidDates = uniqueDates.filter(
+      (date) => !/^\d{4}-\d{2}-\d{2}$/.test(date),
+    );
+
+    if (invalidDates.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid date format. Use YYYY-MM-DD",
+        invalidDates,
+      });
+    }
+
+    // --------------------------------
+    // Find existing holidays
+    // --------------------------------
+
+    const existingHolidays = await Holiday.find({
+      date: { $in: uniqueDates },
+      isActive: true,
+    })
+      .select("date")
+      .lean();
+
+    const existingDates = new Set(
+      existingHolidays.map((holiday) => holiday.date),
+    );
+
+    // --------------------------------
+    // Separate new and existing dates
+    // --------------------------------
+
+    const datesToCreate = uniqueDates.filter(
+      (date) => !existingDates.has(date),
+    );
+
+    const skippedDates = uniqueDates.filter((date) => existingDates.has(date));
+
+    // --------------------------------
+    // Nothing new to create
+    // --------------------------------
+
+    if (datesToCreate.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "All selected dates already have holidays",
+        skippedDates,
+      });
+    }
+
+    // --------------------------------
+    // Create holidays
+    // --------------------------------
+
+    const holidaysToCreate = datesToCreate.map((date) => ({
+      date,
+      name: name.trim(),
+      description: description?.trim() || "",
+    }));
+
+    const createdHolidays = await Holiday.insertMany(holidaysToCreate);
+
+    // --------------------------------
+    // Response
+    // --------------------------------
+
+    return res.status(201).json({
+      success: true,
+      message:
+        skippedDates.length > 0
+          ? `${createdHolidays.length} holidays created. ${skippedDates.length} dates were already holidays.`
+          : `${createdHolidays.length} holidays created successfully`,
+      holidays: createdHolidays,
+      createdDates: datesToCreate,
+      skippedDates,
+    });
+  } catch (error) {
+    handleError(error, res);
+  }
+};
+
 const getHoliday = async (req, res) => {
   try {
     await getHolidaysByMonth(req, res);
@@ -85,4 +197,5 @@ module.exports = {
   getHoliday,
   createHoliday,
   deleteHoliday,
+  createMultipleHoliday,
 };

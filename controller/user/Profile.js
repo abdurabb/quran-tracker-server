@@ -2,6 +2,8 @@ const { handleError } = require("../../handler/handleError");
 const Class = require("../../models/admin/class");
 const Attendance = require("../../models/teacher/Attendance");
 const Branch = require("../../models/admin/branch");
+const Holiday = require("../../models/admin/Holiday");
+const WEEKLY_HOLIDAYS = require("../../handler/holidays");
 const mongoose = require("mongoose");
 const getProfile = async (req, res) => {
   try {
@@ -53,13 +55,11 @@ const getAttendance = async (req, res) => {
       .skip(skip)
       .limit(limit);
     const totalAttendance = await Attendance.countDocuments(query);
-    return res
-      .status(200)
-      .json({
-        message: "Attendance fetched successfully",
-        attendanceData,
-        totalPages: Math.ceil(totalAttendance / limit),
-      });
+    return res.status(200).json({
+      message: "Attendance fetched successfully",
+      attendanceData,
+      totalPages: Math.ceil(totalAttendance / limit),
+    });
   } catch (error) {
     handleError(error, res);
   }
@@ -68,44 +68,169 @@ const getAttendance = async (req, res) => {
 const getAttendanceByMonth = async (req, res) => {
   try {
     let { month, year } = req.query;
-    if (!month || !year)
-      return res.status(400).json({ message: "Month and year are required" });
+
+    if (!month || !year) {
+      return res.status(400).json({
+        message: "Month and year are required",
+      });
+    }
+
     month = parseInt(month);
     year = parseInt(year);
+
+    if (month < 1 || month > 12) {
+      return res.status(400).json({
+        message: "Invalid month",
+      });
+    }
+
+    // --------------------------------
+    // Date range
+    // --------------------------------
+
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0, 23, 59, 59, 999);
-    let query = {
+
+    // --------------------------------
+    // Attendance
+    // --------------------------------
+
+    const query = {
       studentId: new mongoose.Types.ObjectId(req?.userId),
-      date: { $gte: startDate, $lte: endDate },
+      date: {
+        $gte: startDate,
+        $lte: endDate,
+      },
     };
-    const attendanceData =
-      await Attendance.find(query).select("date status reason");
-    const totalPresent = attendanceData.filter(
+
+    const attendanceData = await Attendance.find(query)
+      .select("date status reason")
+      .lean();
+
+    // --------------------------------
+    // Get special holidays from DB
+    // --------------------------------
+
+    const startDateString = `${year}-${String(month).padStart(2, "0")}-01`;
+
+    const nextMonth = month === 12 ? 1 : month + 1;
+    const nextYear = month === 12 ? year + 1 : year;
+
+    const endDateString = `${nextYear}-${String(nextMonth).padStart(
+      2,
+      "0",
+    )}-01`;
+
+    const specialHolidays = await Holiday.find({
+      date: {
+        $gte: startDateString,
+        $lt: endDateString,
+      },
+      isActive: true,
+    })
+      .select("date")
+      .lean();
+
+    // --------------------------------
+    // Create holiday date Set
+    // --------------------------------
+
+    const holidayDates = new Set();
+
+    // Special holidays
+    specialHolidays.forEach((holiday) => {
+      const date = new Date(holiday.date);
+
+      const formattedDate =
+        `${date.getFullYear()}-` +
+        `${String(date.getMonth() + 1).padStart(2, "0")}-` +
+        `${String(date.getDate()).padStart(2, "0")}`;
+
+      holidayDates.add(formattedDate);
+    });
+
+    // --------------------------------
+    // Weekly holidays
+    // --------------------------------
+
+    const current = new Date(year, month - 1, 1);
+    const lastDay = new Date(year, month, 0);
+
+    while (current <= lastDay) {
+      const day = current.getDay();
+
+      if (WEEKLY_HOLIDAYS.includes(day)) {
+        const formattedDate =
+          `${current.getFullYear()}-` +
+          `${String(current.getMonth() + 1).padStart(2, "0")}-` +
+          `${String(current.getDate()).padStart(2, "0")}`;
+
+        holidayDates.add(formattedDate);
+      }
+
+      current.setDate(current.getDate() + 1);
+    }
+
+    // --------------------------------
+    // Remove holiday attendance records
+    // --------------------------------
+
+    const workingDayAttendance = attendanceData.filter((item) => {
+      if (!item.date) return false;
+
+      const date = new Date(item.date);
+
+      const formattedDate =
+        `${date.getFullYear()}-` +
+        `${String(date.getMonth() + 1).padStart(2, "0")}-` +
+        `${String(date.getDate()).padStart(2, "0")}`;
+
+      return !holidayDates.has(formattedDate);
+    });
+
+    // --------------------------------
+    // Attendance totals
+    // --------------------------------
+
+    const totalPresent = workingDayAttendance.filter(
       (item) => item.status === "present",
     ).length;
-    const totalAbsent = attendanceData.filter(
+
+    const totalAbsent = workingDayAttendance.filter(
       (item) => item.status === "absent",
     ).length;
-    const totalLate = attendanceData.filter(
+
+    const totalLate = workingDayAttendance.filter(
       (item) => item.status === "late",
     ).length;
-    const totalEarlyOut = attendanceData.filter(
+
+    const totalEarlyOut = workingDayAttendance.filter(
       (item) => item.status === "early_out",
     ).length;
-    const totalLeave = attendanceData.filter(
+
+    const totalLeave = workingDayAttendance.filter(
       (item) => item.status === "leave",
     ).length;
-    return res
-      .status(200)
-      .json({
-        message: "Attendance fetched successfully",
-        attendanceData,
-        totalPresent,
-        totalAbsent,
-        totalLate,
-        totalEarlyOut,
-        totalLeave,
-      });
+
+    // --------------------------------
+    // Response
+    // --------------------------------
+
+    return res.status(200).json({
+      message: "Attendance fetched successfully",
+
+      // Only working-day attendance
+      attendanceData: workingDayAttendance,
+
+      totalPresent,
+      totalAbsent,
+      totalLate,
+      totalEarlyOut,
+      totalLeave,
+
+      // Optional: useful for frontend
+      totalHolidays: holidayDates.size,
+    });
   } catch (error) {
     handleError(error, res);
   }
