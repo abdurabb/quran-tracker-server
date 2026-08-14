@@ -5,7 +5,6 @@ const Lesson = require("../../models/admin/lesson");
 const LessonType = require("../../models/admin/lessonType");
 const Class = require("../../models/admin/class");
 const mongoose = require("mongoose");
-const { getTotalStudiedJuz } = require("../../handler/educationUtils");
 
 const getTopStudents = async (req, res) => {
   try {
@@ -262,7 +261,6 @@ const getStudentReports = async (req, res) => {
         "obtainedMark lessonId createdAt lessonName initialCount typeName initialMark obtainedCount obtainedMark",
       );
     const total = await Mark.countDocuments(matchStage);
-    const totalStudied = await getTotalStudiedJuz(studentId);
     return res.status(200).json({
       message: "Student reports fetched successfully",
       student: {
@@ -271,8 +269,6 @@ const getStudentReports = async (req, res) => {
         class: student.classId.name,
       },
       reports,
-      totalStudied,
-      remining: Math.max(30 - totalStudied, 0),
       totalPages: Math.ceil(total / limit),
       totalRecords: total,
     });

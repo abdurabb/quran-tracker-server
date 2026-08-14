@@ -5,6 +5,7 @@ const Student = require("../../models/admin/student");
 const mongoose = require("mongoose");
 const Branch = require("../../models/admin/branch");
 const { hashPassword } = require("../../handler/password");
+const { getTotalStudiedJuz } = require("../../handler/educationUtils");
 
 const addStudent = async (req, res) => {
   try {
@@ -242,10 +243,13 @@ const getStudentDetails = async (req, res) => {
         teacher = await Teacher.findById(classFind?.teacher).select("name");
       }
     }
+    const totalStudied = await getTotalStudiedJuz(_id);
     let data = {
       ...student?.toObject(),
       classes: classFind?.name,
       teacher: teacher?.name || "",
+      totalStudied,
+      remining: Math.max(30 - totalStudied, 0),
     };
     return res
       .status(200)
