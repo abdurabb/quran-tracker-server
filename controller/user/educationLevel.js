@@ -1,6 +1,7 @@
 const { handleError } = require("../../handler/handleError");
 const EducationLevel = require("../../models//teacher/Education");
 const mongoose = require("mongoose");
+const { getTotalStudiedJuz } = require("../../handler/educationUtils");
 
 const getEducationLevel = async (req, res) => {
   try {
@@ -124,11 +125,13 @@ const getEducationLevelGraph = async (req, res) => {
           month.value = Number(item.value.toFixed(2));
         }
       });
-
+      const totalStudied = await getTotalStudiedJuz(studentId);
       return res.status(200).json({
         message: "Monthly learning graph data fetched successfully",
         year: selectedYear,
         data: months,
+        totalStudied,
+        remining: Math.max(30 - totalStudied, 0),
       });
     }
 
@@ -179,10 +182,12 @@ const getEducationLevelGraph = async (req, res) => {
         year: item._id,
         value: Number(item.value.toFixed(2)),
       }));
-
+      const totalStudied = await getTotalStudiedJuz(studentId);
       return res.status(200).json({
         message: "Yearly learning graph data fetched successfully",
         data,
+        totalStudied,
+        remining: Math.max(30 - totalStudied, 0),
       });
     }
 

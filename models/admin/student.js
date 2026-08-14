@@ -1,77 +1,77 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const studentsSchema = new mongoose.Schema({
+const studentsSchema = new mongoose.Schema(
+  {
     image: {
-        type: String,
-        default: ""
+      type: String,
+      default: "",
     },
     name: {
-        type: String,
-        required: [true, 'name is Required']
+      type: String,
+      required: [true, "name is Required"],
     },
     email: {
-        type: String,
-        required: [true, 'email is required']
+      type: String,
+      required: [true, "email is required"],
     },
     password: {
-        type: String,
-        required: [true, 'Password is required']
+      type: String,
+      required: [true, "Password is required"],
     },
     dialCode: {
-        type: String,
-        required: [true, 'Dial Code is required']
+      type: String,
+      required: [true, "Dial Code is required"],
     },
     phone: {
-        type: String,
-        required: [true, 'Phone is required']
+      type: String,
+      required: [true, "Phone is required"],
     },
     dob: {
-        type: Date,
-        required: [true, 'Dob is required']
+      type: Date,
+      required: [true, "Dob is required"],
     },
     gender: {
-        type: String,
-        required: [true, 'Gender is required'],
-        enum: ['male', 'female'],
+      type: String,
+      required: [true, "Gender is required"],
+      enum: ["male", "female"],
     },
     address: {
-        type: String,
-        required: [true, 'Address is required']
+      type: String,
+      required: [true, "Address is required"],
     },
     classId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Class',
-        default: null
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Class",
+      default: null,
     },
     branch: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Branch',
-        required: [true, 'Address is required']
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Branch",
+      required: [true, "Address is required"],
     },
     fatherName: {
-        type: String,
-        required: [true, 'father name is required']
+      type: String,
+      required: [true, "father name is required"],
     },
     motherName: {
-        type: String,
-        required: [true, 'mother name is required']
+      type: String,
+      required: [true, "mother name is required"],
     },
-    motherDialCode:{
-        type: String,
-        required: [true, 'Dial Code is required']
+    motherDialCode: {
+      type: String,
+      required: [true, "Dial Code is required"],
     },
-    motherPhone:{
-        type: String,
-        required: [true, 'Phone is required']
+    motherPhone: {
+      type: String,
+      required: [true, "Phone is required"],
     },
     admissionDate: {
-        type: Date,
-        required: [true, 'Admission Date is required']
-    }
-}, { timestamps: true });
+      type: Date,
+      required: [true, "Admission Date is required"],
+    },
+  },
+  { timestamps: true },
+);
 
-const Student = mongoose.model('Student', studentsSchema);
-module.exports = Student
-
-
-
+const Student = mongoose.model("Student", studentsSchema);
+module.exports = Student;
