@@ -3,6 +3,7 @@ const Attendance = require("../../models/teacher/Attendance");
 const Student = require("../../models/admin/student");
 const WEEKLY_HOLIDAYS = require("../../handler/holidays");
 const Holiday = require("../../models/admin/Holiday");
+const { getMonthlyAttendance } = require("../../handler/attendanceService");
 
 const addAttendance = async (req, res) => {
   try {
@@ -24,6 +25,21 @@ const addAttendance = async (req, res) => {
     // =====================================================
 
     const formattedDate = date ? new Date(date) : new Date();
+    if (formattedDate > new Date()) {
+      return res.status(400).json({
+        message: "You cannot add attendance for a future date.",
+      });
+    }
+
+    const fiveDaysAgo = new Date();
+    fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+
+    if (formattedDate < fiveDaysAgo) {
+      return res.status(400).json({
+        message:
+          "Attendance can only be added for today or the previous 5 days.",
+      });
+    }
 
     if (isNaN(formattedDate.getTime())) {
       return res.status(400).json({
@@ -248,7 +264,27 @@ const deleteAttendance = async (req, res) => {
   }
 };
 
+const getStudentAttendanceByMonth = async (req, res) => {
+  try {
+    const { studentId, month, year } = req.query;
+
+    const data = await getMonthlyAttendance({
+      studentId,
+      month,
+      year,
+    });
+
+    return res.status(200).json({
+      message: "Student attendance fetched successfully",
+      ...data,
+    });
+  } catch (error) {
+    handleError(error, res);
+  }
+};
+
 module.exports = {
+  getStudentAttendanceByMonth,
   addAttendance,
   getAttendance,
   updateAttendance,

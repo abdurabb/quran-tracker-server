@@ -63,6 +63,7 @@ const {
   createMultipleHoliday,
   deleteHoliday,
 } = require("../controller/admin/holidayController");
+const {getStudentAttendanceByMonth} = require('../controller/admin/attendance')
 
 // auth
 router.post("/login", adminLogin);
@@ -133,5 +134,10 @@ router.get("/get-holiday", protectAdmin, getHoliday);
 router.post("/add-holiday", protectAdmin, createHoliday);
 router.post("/create-multiple-holiday", protectAdmin, createMultipleHoliday);
 router.post("/delete-holiday", protectAdmin, deleteHoliday);
+router.get(
+  "/get-student-attendance-by-month",
+  protectAdmin,
+  getStudentAttendanceByMonth,
+);
 
 module.exports = router;

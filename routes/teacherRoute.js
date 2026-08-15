@@ -29,6 +29,9 @@ const {
   deleteEducationLevelHistory,
 } = require("../controller/teacher/educationLevel");
 const { getHolidaysByMonth } = require("../handler/getHolidayByMonth");
+const {
+  getStudentAttendanceByMonth,
+} = require("../controller/teacher/attendance");
 
 router.get("/get-classes", protectTeacher, getClasses);
 router.get("/get-students", protectTeacher, getStudents);
@@ -67,5 +70,10 @@ router.delete(
 
 // holiday
 router.get("/get-holiday", protectTeacher, getHolidaysByMonth);
+router.get(
+  "/get-student-attendance-by-month",
+  protectTeacher,
+  getStudentAttendanceByMonth,
+);
 
 module.exports = router;
