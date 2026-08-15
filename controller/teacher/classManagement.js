@@ -43,13 +43,11 @@ const getStudents = async (req, res) => {
       .skip(skip)
       .limit(limit)
       .lean();
-    res
-      .status(200)
-      .json({
-        message: "Students fetched successfully",
-        students,
-        totalPages: Math.ceil(total / limit),
-      });
+    res.status(200).json({
+      message: "Students fetched successfully",
+      students,
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (error) {
     handleError(error, res);
   }
@@ -102,57 +100,22 @@ const getLessonsAndMarks = async (req, res) => {
   }
 };
 
-// const addLessonMarks = async (req, res) => {
-//     try {
-//         const { lessonId, studentId, typeCount } = req.body;
-
-//         if (!lessonId) return res.status(400).json({ message: 'Lesson ID is required' });
-//         if (!studentId) return res.status(400).json({ message: 'Student ID is required' });
-//         const student = await Student.findById(studentId).populate('classId', 'teacher').select('classId').lean();
-//         if (!student) return res.status(400).json({ message: 'Student not found' });
-//         if (student?.classId?.teacher?.toString() != req.teacherId?.toString()) return res.status(400).json({ message: 'You are not authorized to add marks for this student' });
-
-//         const lesson = await Lesson.findById(lessonId);
-//         if (!lesson) return res.status(400).json({ message: 'Lesson not found' });
-//         if (lesson?.isDeleted == true) return res.status(400).json({ message: 'Currently this lesson is not available' });
-//         let lessonTypeName = ''
-//         if (lesson?.lessonType) {
-//             if (!typeCount) return res.status(400).json({ message: 'Type Count is required' });
-//             const lessonType = await LessonType.findById(lesson?.lessonType).select('name').lean()
-//             lessonTypeName = lessonType?.name
-//         } else {
-//             lessonTypeName = 'Fixed Marks'
-//         }
-
-//         let obtainedMark = 0
-//         if (lesson?.isFixedMarks == true) {
-//             obtainedMark = lesson?.mark
-//         } else {
-//             obtainedMark = (lesson.mark / lesson?.criteriaNumber) * typeCount    // 10 mark for 3 line
-//         }
-
-//         await Mark.create({
-//             lessonId,
-//             studentId,
-//             lessonTypeId: lesson?.lessonType,
-//             lessonName: lesson?.name,
-//             initialCount: lesson?.criteriaNumber, // 1/ 2/ 3 - 2 line 4 pages etc.
-//             typeName: lessonTypeName, // Fixed Marks/ Juzu/ Line/ Page etc.
-//             initialMark: lesson?.mark, // 10/ 20/ 30 etc. 10 mark for one page etc.
-//             obtainedCount: typeCount || 0, // 1/ 2/ 3 - 2 line 4 pages etc count of the lessons from student.
-//             obtainedMark: obtainedMark
-//         })
-
-//         return res.status(200).json({ message: 'Lesson marks added successfully' })
-
-//     } catch (error) {
-//         handleError(error, res)
-//     }
-// }
-
 const addLessonMarks = async (req, res) => {
   try {
-    const { studentId, lessons } = req.body;
+    const { studentId, lessons, date } = req.body;
+
+    let markDate = null;
+
+    if (date) {
+      // date comes as: "2026-08-06"
+      markDate = new Date(`${date}T00:00:00.000Z`);
+
+      if (isNaN(markDate.getTime())) {
+        return res.status(400).json({
+          message: "Invalid date",
+        });
+      }
+    }
 
     if (!studentId) {
       return res.status(400).json({ message: "Student ID is required" });
@@ -229,6 +192,13 @@ const addLessonMarks = async (req, res) => {
         initialMark: lesson.mark,
         obtainedCount: typeCount || 0,
         obtainedMark,
+        // Only override timestamps when a date was provided
+        ...(markDate
+          ? {
+              createdAt: markDate,
+              updatedAt: markDate,
+            }
+          : {}),
       });
     }
     await Mark.insertMany(marksData);
