@@ -78,7 +78,7 @@ const getLessonsAndMarks = async (req, res) => {
   try {
     let query = { isDeleted: false };
     const lessons = await Lesson.find(query)
-      .select("name lessonType criteriaNumber description mark")
+      .select("name lessonType criteriaNumber description mark isFixedMarks")
       .sort({ createdAt: -1 })
       .lean();
     let data = [];
