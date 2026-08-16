@@ -56,25 +56,37 @@ const getMonthlyAttendance = async ({ studentId, year, month }) => {
   // --------------------------------
   // Attendance totals
   // --------------------------------
-
-  const totalPresent = attendanceData.filter(
-    (item) => item.status === "present",
-  ).length;
-
-  const totalAbsent = attendanceData.filter(
-    (item) => item.status === "absent",
-  ).length;
-
   const totalLate = attendanceData.filter(
     (item) => item.status === "late",
   ).length;
 
-  const totalEarlyOut = attendanceData.filter(
-    (item) => item.status === "early_out",
+  // Normalize status before counting
+  const totalPresent = attendanceData.filter(
+    (item) =>
+      String(item.status || "")
+        .trim()
+        .toLowerCase() === "present",
+  ).length;
+
+  const totalAbsent = attendanceData.filter(
+    (item) =>
+      String(item.status || "")
+        .trim()
+        .toLowerCase() === "absent",
   ).length;
 
   const totalLeave = attendanceData.filter(
-    (item) => item.status === "leave",
+    (item) =>
+      String(item.status || "")
+        .trim()
+        .toLowerCase() === "leave",
+  ).length;
+
+  const totalEarlyOut = attendanceData.filter(
+    (item) =>
+      String(item.status || "")
+        .trim()
+        .toLowerCase() === "early_out",
   ).length;
 
   // --------------------------------

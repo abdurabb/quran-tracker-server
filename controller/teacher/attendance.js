@@ -107,6 +107,7 @@ const addAttendance = async (req, res) => {
     // =====================================================
     // Add / Update attendance
     // =====================================================
+    const attendanceToInsert = [];
 
     for (const student of students) {
       const { studentId, status, reason } = student;
@@ -140,12 +141,12 @@ const addAttendance = async (req, res) => {
       }
 
       // -------------------------------------------------
-      // Leave reason
+      // Reason required for leave / early_out
       // -------------------------------------------------
 
-      if (status === "leave" && !reason) {
+      if ((status === "leave" || status === "early_out") && !reason) {
         return res.status(400).json({
-          message: "Reason is required",
+          message: `Reason is required for ${status}`,
         });
       }
 
@@ -162,27 +163,35 @@ const addAttendance = async (req, res) => {
       });
 
       // -------------------------------------------------
-      // Create attendance
+      // Existing attendance
       // -------------------------------------------------
 
-      if (!isExist) {
-        await Attendance.create({
-          studentId,
-          date: formattedDate,
-          status,
-          reason,
-        });
-      }
-
-      // -------------------------------------------------
-      // Update attendance
-      // -------------------------------------------------
-      else {
+      if (isExist) {
         isExist.status = status;
-        isExist.reason = reason;
+        isExist.reason = reason || "";
 
         await isExist.save();
       }
+
+      // -------------------------------------------------
+      // New attendance
+      // -------------------------------------------------
+      else {
+        attendanceToInsert.push({
+          studentId,
+          date: formattedDate,
+          status,
+          reason: reason || "",
+        });
+      }
+    }
+
+    // -------------------------------------------------
+    // Insert all new attendance records at once
+    // -------------------------------------------------
+
+    if (attendanceToInsert.length > 0) {
+      await Attendance.insertMany(attendanceToInsert);
     }
 
     // =====================================================
