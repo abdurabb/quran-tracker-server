@@ -4,6 +4,9 @@ const Teacher = require("../../models/admin/teacher");
 const Student = require("../../models/admin/student");
 const mongoose = require("mongoose");
 const Branch = require("../../models/admin/branch");
+const Attendance = require("../../models/teacher/Attendance");
+const Report = require("../../models/teacher/Mark");
+const EducationLevel = require("../../models/teacher/Education");
 const { hashPassword } = require("../../handler/password");
 const { getTotalStudiedJuz } = require("../../handler/educationUtils");
 
@@ -267,7 +270,9 @@ const deleteStudent = async (req, res) => {
     if (!studentDoc)
       return res.status(404).json({ message: "Student not found" });
     // need delete attendance, daily reports,
-
+    await Attendance.deleteMany({ studentId: _id });
+    await Report.deleteMany({ studentId: _id });
+    await EducationLevel.deleteMany({ studentId: _id });
     await Student.findByIdAndDelete(_id);
     return res.status(200).json({ message: "Student deleted successfully" });
   } catch (error) {
