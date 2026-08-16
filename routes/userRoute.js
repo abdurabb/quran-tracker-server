@@ -13,6 +13,7 @@ const {
   getEducationLevelGraph,
 } = require("../controller/user/educationLevel");
 const { getHolidaysByMonth } = require("../handler/getHolidayByMonth");
+const { changeUserPassword } = require("../controller/user/change_password");
 
 router.get("/get-profile", protectUser, getProfile);
 router.get("/get-attendance", protectUser, getAttendance);
@@ -22,6 +23,7 @@ router.get("/get-reports", protectUser, getReports);
 router.get("/get-toppers", protectUser, getToppers);
 router.get("/get-educaiton-level", protectUser, getEducationLevel);
 router.get("/get-educaiton-level-graph", protectUser, getEducationLevelGraph);
+router.put("/change-password", protectUser, changeUserPassword);
 
 router.get("/get-holiday", protectUser, getHolidaysByMonth);
 
