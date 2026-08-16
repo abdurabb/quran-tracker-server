@@ -1,7 +1,11 @@
 const express = require("express");
 const router = express.Router();
 
-const { adminLogin, crone } = require("../controller/admin/auth");
+const {
+  adminLogin,
+  changeAdminPassword,
+  crone,
+} = require("../controller/admin/auth");
 const {
   addClass,
   updateClass,
@@ -63,10 +67,13 @@ const {
   createMultipleHoliday,
   deleteHoliday,
 } = require("../controller/admin/holidayController");
-const {getStudentAttendanceByMonth} = require('../controller/admin/attendance')
+const {
+  getStudentAttendanceByMonth,
+} = require("../controller/admin/attendance");
 
 // auth
 router.post("/login", adminLogin);
+router.put("/change-password", protectAdmin, changeAdminPassword);
 router.get("/crone", crone);
 // class
 router.post("/add-class", protectAdmin, addClass);

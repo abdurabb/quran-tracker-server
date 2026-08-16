@@ -8,6 +8,9 @@ const {
   addLessonMarks,
 } = require("../controller/teacher/classManagement");
 const {
+  changeTeacherPassword,
+} = require("../controller/teacher/changePassword");
+const {
   getReports,
   getStudentReports,
   getTopStudents,
@@ -32,6 +35,9 @@ const { getHolidaysByMonth } = require("../handler/getHolidayByMonth");
 const {
   getStudentAttendanceByMonth,
 } = require("../controller/teacher/attendance");
+
+// password
+router.put("/change-password", protectTeacher, changeTeacherPassword);
 
 router.get("/get-classes", protectTeacher, getClasses);
 router.get("/get-students", protectTeacher, getStudents);

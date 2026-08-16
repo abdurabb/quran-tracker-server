@@ -57,6 +57,64 @@ const adminLogin = async (req, res) => {
   }
 };
 
+const changeAdminPassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+
+    // ---------------------------------------------------------
+    // VALIDATION
+    // ---------------------------------------------------------
+
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({
+        message:
+          "Old password, new password and confirm password are required.",
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        message: "New password must be at least 6 characters.",
+      });
+    }
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        message: "New password and confirm password do not match.",
+      });
+    }
+    if (oldPassword === newPassword) {
+      return res.status(400).json({
+        message: "New password must be different from old password.",
+      });
+    }
+    // const adminId = req.user.id;
+    const adminId = req.adminId;
+    const admin = await Admin.findById(adminId);
+    if (!admin) {
+      return res.status(404).json({
+        message: "Admin account not found.",
+      });
+    }
+    const isPasswordCorrect = await bcrypt.compare(oldPassword, admin.password);
+    if (!isPasswordCorrect) {
+      return res.status(401).json({
+        message: "Old password is incorrect.",
+      });
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    admin.password = hashedPassword;
+    await admin.save();
+    return res.status(200).json({
+      message: "Password changed successfully.",
+    });
+  } catch (error) {
+    console.error("Change admin password error:", error);
+    return res.status(500).json({
+      message: "Failed to change password.",
+    });
+  }
+};
+
 const crone = async (req, res) => {
   try {
     return res
@@ -69,5 +127,6 @@ const crone = async (req, res) => {
 
 module.exports = {
   adminLogin,
+  changeAdminPassword,
   crone,
 };
