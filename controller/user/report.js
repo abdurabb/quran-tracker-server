@@ -4,7 +4,6 @@ const Mark = require("../../models/teacher/Mark");
 const Class = require("../../models/admin/class");
 const mongoose = require("mongoose");
 
-
 const getReports = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
@@ -141,10 +140,10 @@ const getReports = async (req, res) => {
 
 const getToppers = async (req, res) => {
   try {
-    const { startDate, endDate, count = 3 } = req.query;
+    let { startDate, endDate, count = 3 } = req.query;
     const userData = req.user;
     const classId = userData?.classId || null;
-    const matchStage = {};
+    let matchStage = {};
     if (!startDate && !endDate) {
       // Default case: last 30 days
       const endDateDefault = new Date();
@@ -296,14 +295,13 @@ const getToppers = async (req, res) => {
     const classToppersRaw = classId
       ? await Mark.aggregate(pipelineClassToppers)
       : [];
-    return res
-      .status(200)
-      .json({
-        message: "Top students fetched successfully",
-        topStudents,
-        classToppers: classToppersRaw,
-      });
+    return res.status(200).json({
+      message: "Top students fetched successfully",
+      topStudents,
+      classToppers: classToppersRaw,
+    });
   } catch (error) {
+    console.log(error);
     handleError(error, res);
   }
 };
