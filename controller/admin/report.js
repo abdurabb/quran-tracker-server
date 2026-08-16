@@ -11,10 +11,12 @@ const getTopStudents = async (req, res) => {
     const { startDate, endDate, count = 3 } = req.query;
     const matchStage = {};
     if (!startDate && !endDate) {
-      // Default case: last 30 days
-      const endDateDefault = new Date();
-      const startDateDefault = new Date();
-      startDateDefault.setDate(startDateDefault.getDate() - 30);
+      // Default case: current year (Jan 1 - Dec 31)
+      const currentYear = new Date().getFullYear();
+
+      const startDateDefault = new Date(currentYear, 0, 1); // Jan 1
+      const endDateDefault = new Date(currentYear, 11, 31, 23, 59, 59, 999); // Dec 31
+
       matchStage.createdAt = {
         $gte: startDateDefault,
         $lte: endDateDefault,
