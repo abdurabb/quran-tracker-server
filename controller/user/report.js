@@ -18,7 +18,10 @@ const getReports = async (req, res) => {
       studentId: new mongoose.Types.ObjectId(userData._id),
     };
 
-    // Date filtering
+    // =====================================================
+    // DATE FILTERING
+    // =====================================================
+
     if (startDate) {
       const start = new Date(startDate);
       start.setHours(0, 0, 0, 0);
@@ -41,10 +44,12 @@ const getReports = async (req, res) => {
     // Default: last 30 days
     if (!startDate && !endDate) {
       const defaultStart = new Date();
+
       defaultStart.setDate(defaultStart.getDate() - 30);
       defaultStart.setHours(0, 0, 0, 0);
 
       const defaultEnd = new Date();
+
       defaultEnd.setHours(23, 59, 59, 999);
 
       query.createdAt = {
@@ -53,20 +58,30 @@ const getReports = async (req, res) => {
       };
     }
 
+    // =====================================================
+    // AGGREGATION
+    // =====================================================
+
     const result = await Report.aggregate([
-      // 1. Filter first
+      // ---------------------------------------------------
+      // 1. Filter
+      // ---------------------------------------------------
       {
         $match: query,
       },
 
-      // 2. Sort reports by newest first
+      // ---------------------------------------------------
+      // 2. Sort newest first
+      // ---------------------------------------------------
       {
         $sort: {
           createdAt: -1,
         },
       },
 
-      // 3. Group reports by date
+      // ---------------------------------------------------
+      // 3. Group by date
+      // ---------------------------------------------------
       {
         $group: {
           _id: {
@@ -75,6 +90,7 @@ const getReports = async (req, res) => {
               date: "$createdAt",
             },
           },
+
           reports: {
             $push: {
               _id: "$_id",
@@ -87,19 +103,29 @@ const getReports = async (req, res) => {
               createdAt: "$createdAt",
             },
           },
+
+          // Total mark for this particular date
+          dailyMark: {
+            $sum: "$obtainedMark",
+          },
         },
       },
 
-      // 4. Sort grouped dates
+      // ---------------------------------------------------
+      // 4. Sort dates newest first
+      // ---------------------------------------------------
       {
         $sort: {
           _id: -1,
         },
       },
 
-      // 5. Get total number of dates
+      // ---------------------------------------------------
+      // 5. Facet
+      // ---------------------------------------------------
       {
         $facet: {
+          // Paginated date groups
           data: [
             {
               $skip: skip,
@@ -109,28 +135,58 @@ const getReports = async (req, res) => {
             },
           ],
 
+          // Total number of dates
           total: [
             {
               $count: "count",
+            },
+          ],
+
+          // Total mark for ENTIRE selected period
+          markTotal: [
+            {
+              $group: {
+                _id: null,
+                totalMark: {
+                  $sum: "$dailyMark",
+                },
+              },
             },
           ],
         },
       },
     ]);
 
+    // =====================================================
+    // RESULT
+    // =====================================================
+
     const groupedReports = result[0]?.data || [];
-    const totalRecords = result[0]?.total[0]?.count || 0;
+
+    const totalRecords = result[0]?.total?.[0]?.count || 0;
+
+    const totalMark = result[0]?.markTotal?.[0]?.totalMark || 0;
 
     const reports = groupedReports.map((item) => ({
       date: item._id,
       reports: item.reports,
+
+      // Total mark for this date
+      dailyMark: item.dailyMark || 0,
     }));
 
     return res.status(200).json({
       message: "Reports fetched successfully",
+
       reports,
+
+      // Total obtained mark for the selected date period
+      totalMark,
+
       totalPages: Math.ceil(totalRecords / limit),
+
       totalRecords,
+
       currentPage: page,
     });
   } catch (error) {
