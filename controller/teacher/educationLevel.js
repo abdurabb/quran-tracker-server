@@ -1,5 +1,6 @@
 const { handleError } = require("../../handler/handleError");
 const Education = require("../../models/teacher/Education");
+const Student = require("../../models/admin/student");
 const { getTotalStudiedJuz } = require("../../handler/educationUtils");
 
 const addEducationLevel = async (req, res) => {
@@ -68,6 +69,10 @@ const getEducationLevelHistory = async (req, res) => {
     let { studentId, year, month } = req.query;
     if (!studentId)
       return res.status(400).json({ message: "Student ID is required" });
+    const student = await Student.findById(studentId).select("-password");
+    if (!student) {
+      return res.status(400).json({ message: "Student not fount" });
+    }
     if (!year) return res.status(400).json({ message: "Year is required" });
     if (!month) return res.status(400).json({ message: "Month is required" });
     const page = parseInt(req.query.page) || 1;
@@ -85,10 +90,14 @@ const getEducationLevelHistory = async (req, res) => {
       .skip(skip)
       .limit(limit);
     const total = await Education.countDocuments(query);
-    const totalStudied = await getTotalStudiedJuz(studentId);
+    const studiedFromCenter = student?.previousStudy?.juzDetails?.length || 0;
+    const totalStudied =
+      (await getTotalStudiedJuz(studentId)) + studiedFromCenter;
     return res.status(200).json({
       message: "Education Level History fetched successfully",
       educationLevelHistory,
+      previousStudy: student?.previousStudy,
+      studiedFromCenter,
       totalStudied: totalStudied,
       remining: Math.max(30 - totalStudied, 0),
       totalPages: Math.ceil(total / limit),

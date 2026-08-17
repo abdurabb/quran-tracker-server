@@ -1,6 +1,7 @@
 const { handleError } = require("../../handler/handleError");
 const Class = require("../../models/admin/class");
 const Teacher = require("../../models/admin/teacher");
+const Admin = require("../../models/admin/adminSchema");
 const Student = require("../../models/admin/student");
 const mongoose = require("mongoose");
 const Branch = require("../../models/admin/branch");
@@ -12,13 +13,29 @@ const { getTotalStudiedJuz } = require("../../handler/educationUtils");
 
 const addStudent = async (req, res) => {
   try {
-    let { email, classId, branch } = req?.body;
+    let { email, classId, branch, previousStudy } = req?.body;
     const existingStudent = await Student.findOne({
       email: new RegExp(`^${email}$`, "i"),
     });
     if (existingStudent) {
       return res.status(400).json({
-        message: "Students already exists with this email or phone number",
+        message: "Students already exists with this email",
+      });
+    }
+    const existingTeacher = await Teacher.findOne({
+      email: new RegExp(`^${email}$`, "i"),
+    });
+    if (existingTeacher) {
+      return res.status(400).json({
+        message: "Teacher already exists with this email",
+      });
+    }
+    const existingAdmin = await Admin.findOne({
+      email: new RegExp(`^${email}$`, "i"),
+    });
+    if (existingAdmin) {
+      return res.status(400).json({
+        message: "Admin already exists with this email",
       });
     }
     if (!branch) {
@@ -43,12 +60,21 @@ const addStudent = async (req, res) => {
           .json({ message: "Class Not Found", error: "Class Not Found" });
       }
     }
+    // Previous study validation
+    const previousStudyResult = previousStudyValidation(previousStudy);
+
+    if (!previousStudyResult.valid) {
+      return res.status(400).json({
+        message: previousStudyResult.message,
+      });
+    }
     await Student.create({
       ...req?.body,
       password: await hashPassword(req?.body?.password),
       dob: new Date(req?.body?.dob),
       admissionDate: new Date(req?.body?.admissionDate),
       classId,
+      previousStudy: previousStudyResult.data,
     });
 
     return res.status(201).json({ message: "Student created successfully" });
@@ -77,6 +103,7 @@ const updateStudent = async (req, res) => {
       motherName,
       motherDialCode,
       motherPhone,
+      previousStudy,
     } = req?.body;
     if (!_id) {
       return res.status(400).json({ message: "_id is required" });
@@ -138,6 +165,15 @@ const updateStudent = async (req, res) => {
     }
     if (motherPhone) {
       students.motherPhone = motherPhone;
+    }
+    if (previousStudy !== undefined) {
+      const result = previousStudyValidation(previousStudy);
+      if (!result.valid) {
+        return res.status(400).json({
+          message: result.message,
+        });
+      }
+      students.previousStudy = result.data;
     }
     await students.save();
     return res.status(200).json({ message: "Teacher Updated Successfully" });
@@ -246,11 +282,14 @@ const getStudentDetails = async (req, res) => {
         teacher = await Teacher.findById(classFind?.teacher).select("name");
       }
     }
-    const totalStudied = await getTotalStudiedJuz(_id);
+    const studiedFromCenter = student?.previousStudy?.juzDetails?.length;
+    const totalStudied = (await getTotalStudiedJuz(_id)) + studiedFromCenter;
     let data = {
       ...student?.toObject(),
       classes: classFind?.name,
       teacher: teacher?.name || "",
+      previousStudy: student?.previousStudy,
+      studiedFromCenter,
       totalStudied,
       remining: Math.max(30 - totalStudied, 0),
     };
@@ -319,3 +358,123 @@ module.exports = {
   assignClassFotStudent,
   getStudentsFilteredByClass,
 };
+
+const JUZ_LIST = [
+  "الٓم",
+  "سَيَقُولُ",
+  "تِلْكَ الرُّسُلُ",
+  "لَنْ تَنَالُوا",
+  "وَالْمُحْصَنَاتُ",
+  "لَا يُحِبُّ اللَّهُ",
+  "وَإِذَا سَمِعُوا",
+  "وَلَوْ أَنَّنَا",
+  "قَالَ الْمَلَأُ",
+  "وَاعْلَمُوا",
+  "يَعْتَذِرُونَ",
+  "وَمَا مِنْ دَابَّةٍ",
+  "وَمَا أُبَرِّئُ",
+  "رُبَمَا",
+  "سُبْحَانَ الَّذِي",
+  "قَالَ أَلَمْ",
+  "اقْتَرَبَ",
+  "قَدْ أَفْلَحَ",
+  "وَقَالَ الَّذِينَ",
+  "أَمَّنْ خَلَقَ",
+  "اتْلُ مَا أُوحِيَ",
+  "وَمَنْ يَقْنُتْ",
+  "وَمَا لِيَ",
+  "فَمَنْ أَظْلَمُ",
+  "إِلَيْهِ يُرَدُّ",
+  "حم",
+  "قَالَ فَمَا خَطْبُكُمْ",
+  "قَدْ سَمِعَ",
+  "تَبَارَكَ",
+  "عَمَّ يَتَسَاءَلُونَ",
+];
+
+function previousStudyValidation(previousStudy) {
+  const data = previousStudy || {};
+
+  const totalStudiedPages = Number(data.totalStudiedPages ?? 0);
+  const totalStudiedLines = Number(data.totalStudiedLines ?? 0);
+  const isJuzCompleted = Boolean(data.isJuzCompleted);
+  const juzDetails = Array.isArray(data.juzDetails) ? data.juzDetails : [];
+
+  // Pages
+  if (!Number.isInteger(totalStudiedPages) || totalStudiedPages < 0) {
+    return {
+      valid: false,
+      message: "Studied pages must be a non-negative integer",
+    };
+  }
+
+  // Lines
+  if (
+    !Number.isInteger(totalStudiedLines) ||
+    totalStudiedLines < 0 ||
+    totalStudiedLines > 14
+  ) {
+    return {
+      valid: false,
+      message: "Studied lines must be between 0 and 14",
+    };
+  }
+
+  // Juz completed but no details
+  if (isJuzCompleted && juzDetails.length === 0) {
+    return {
+      valid: false,
+      message: "Please select at least one completed Juz",
+    };
+  }
+
+  // Validate Juz
+  const usedJuzNumbers = new Set();
+
+  for (const juz of juzDetails) {
+    const juzNumber = Number(juz.juzNumber);
+
+    if (!Number.isInteger(juzNumber) || juzNumber < 1 || juzNumber > 30) {
+      return {
+        valid: false,
+        message: "Invalid Juz number",
+      };
+    }
+
+    // Prevent duplicate Juz
+    if (usedJuzNumbers.has(juzNumber)) {
+      return {
+        valid: false,
+        message: `Juz ${juzNumber} is selected more than once`,
+      };
+    }
+
+    usedJuzNumbers.add(juzNumber);
+
+    // Always derive the name from the number
+    if (juz.juzName !== JUZ_LIST[juzNumber - 1]) {
+      return {
+        valid: false,
+        message: `Invalid Juz name for Juz ${juzNumber}`,
+      };
+    }
+  }
+
+  // If no Juz completed, don't allow details
+  if (!isJuzCompleted && juzDetails.length > 0) {
+    return {
+      valid: false,
+      message: "Juz details cannot be added when Juz is not completed",
+    };
+  }
+
+  return {
+    valid: true,
+    data: {
+      totalStudiedPages,
+      totalStudiedLines,
+      isJuzCompleted,
+      juzDetails,
+    },
+  };
+}

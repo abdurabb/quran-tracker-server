@@ -1,5 +1,55 @@
 const mongoose = require("mongoose");
 
+const previousJuzSchema = new mongoose.Schema(
+  {
+    juzName: {
+      type: String,
+      required: true,
+    },
+
+    juzNumber: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 30,
+    },
+  },
+  { _id: false },
+);
+
+const previousStudySchema = new mongoose.Schema(
+  {
+    // How many pages the student already studied
+    totalStudiedPages: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    // Lines studied on the current/last page
+    // Maximum is 14
+    totalStudiedLines: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 14,
+    },
+
+    // Whether the student has completed any Juz
+    isJuzCompleted: {
+      type: Boolean,
+      default: false,
+    },
+
+    // Completed Juz details
+    juzDetails: {
+      type: [previousJuzSchema],
+      default: [],
+    },
+  },
+  { _id: false },
+);
+
 const studentsSchema = new mongoose.Schema(
   {
     image: {
@@ -68,6 +118,14 @@ const studentsSchema = new mongoose.Schema(
     admissionDate: {
       type: Date,
       required: [true, "Admission Date is required"],
+    },
+    // =====================================================
+    // PREVIOUS STUDY DETAILS
+    // =====================================================
+
+    previousStudy: {
+      type: previousStudySchema,
+      default: () => ({}),
     },
   },
   { timestamps: true },
