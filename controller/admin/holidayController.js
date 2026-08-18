@@ -155,7 +155,15 @@ const deleteHoliday = async (req, res) => {
   try {
     const { id } = req.body;
 
-    const holiday = await Holiday.findByIdAndDelete(id);
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: "Holiday ID is required",
+      });
+    }
+
+    // Find holiday first
+    const holiday = await Holiday.findById(id);
 
     if (!holiday) {
       return res.status(404).json({
@@ -163,6 +171,29 @@ const deleteHoliday = async (req, res) => {
         message: "Holiday not found",
       });
     }
+
+    // Get today's date as YYYY-MM-DD
+    const today = new Date();
+
+    const todayString = [
+      today.getFullYear(),
+      String(today.getMonth() + 1).padStart(2, "0"),
+      String(today.getDate()).padStart(2, "0"),
+    ].join("-");
+
+    // Convert holiday date to YYYY-MM-DD
+    const holidayDateString = String(holiday.date).slice(0, 10);
+
+    // Prevent deleting a past holiday
+    if (holidayDateString < todayString) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot delete a holiday for a past date",
+      });
+    }
+
+    // Delete holiday
+    await Holiday.findByIdAndDelete(id);
 
     return res.status(200).json({
       success: true,
